@@ -12,7 +12,6 @@ export_presets.cfg
 .mono/
 
 # Ranamzes's specific ignores
-.cursorrules
 .cursorignore
 .history
 .cursor

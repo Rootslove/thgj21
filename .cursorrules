@@ -1,0 +1,414 @@
+###INSTRUCTIONS###
+# Godot 4.5 Game Development
+
+## ⚡ QUICK DECISION GUIDE
+
+**Before writing ANY code, ask:**
+- [ ] Is this a reusable behavior? → Component
+- [ ] Does data vary between instances? → Resource
+- [ ] Are parameters 3+ or will grow? → Custom class
+- [ ] Is this combinable behavior? → Strategy Pattern
+- [ ] Am I using specific types? → HealthComponent NOT Node
+
+## 🎯 SUCCESS METRICS
+
+Following these rules results in:
+- 90% fewer crashes from null references
+- 3x faster feature development after initial setup
+- 5x easier debugging with strict typing
+- Instant feature migration between projects
+
+## 🔥 CORE MANDATORY RULES
+
+You MUST ALWAYS:
+- **STRICT TYPING MANDATORY**: Use specific types everywhere (HealthComponent NOT Node, Array[Enemy] NOT Array)
+- Use indentation tabs size 4 with strict typing enforcement
+- ALWAYS use class_name for custom types - NO EXCEPTIONS
+- Functions with 3+ related parameters OR growth potential MUST use custom classes
+- ALWAYS prefer composition over inheritance for complex systems
+- Use Resources for all data that varies between instances
+- All comments in English (translate from Russian if needed)
+- NO placeholders or omitted code - complete implementations only
+- Check node/resource/method existence before accessing to prevent crashes
+
+## 🎯 STRICT TYPING RULES
+
+**NEVER use generic types - ALWAYS be specific:**
+
+```gdscript
+# ❌ FORBIDDEN: Generic types
+var components: Array
+var node: Node
+@export var resource: Resource
+func process_data(data): pass
+func get_component() -> Node: pass
+
+# ✅ MANDATORY: Specific types
+var components: Array[BaseComponent]
+var health_node: HealthComponent
+@export var enemy_stats: EnemyStats
+func process_data(data: PlayerData) -> ProcessResult: pass
+func get_component() -> HealthComponent: pass
+```
+
+**Type Safety Requirements:**
+- ALL variables must have explicit type annotations
+- ALL function parameters must be typed
+- ALL function return values must be typed
+- ALL @export variables must use specific component types
+- ALL arrays must specify element types: Array[SpecificType]
+
+## 📁 PROJECT STRUCTURE ORGANIZATION
+
+**MANDATORY: Organize by FUNCTIONALITY/ENTITIES, NOT file types**
+
+```
+# ❌ BAD: Organized by file types
+res://
+├── scripts/
+│   ├── player.gd
+│   ├── enemy.gd
+│   └── inventory.gd
+├── scenes/
+│   ├── Player.tscn
+│   └── Enemy.tscn
+├── resources/
+│   ├── player_stats.tres
+│   └── enemy_stats.tres
+└── textures/
+    ├── player_sprite.png
+    └── enemy_sprite.png
+
+# ✅ GOOD: Organized by features/entities
+res://
+├── player/
+│   ├── player.gd
+│   ├── Player.tscn
+│   ├── components/
+│   │   ├── player_input.gd
+│   │   └── player_movement.gd
+│   ├── data/
+│   │   └── player_stats.tres
+│   └── assets/
+│       └── player_sprite.png
+├── enemies/
+│   ├── base_enemy.gd
+│   ├── specific_enemies/
+│   │   ├── goblin/
+│   │   │   ├── goblin.gd
+│   │   │   ├── Goblin.tscn
+│   │   │   └── goblin_sprite.png
+│   │   └── orc/
+│   └── data/
+│       └── enemy_stats.tres
+└── inventory/
+    ├── inventory_system.gd
+    ├── InventoryUI.tscn
+    ├── items/
+    └── data/
+```
+
+**Benefits of Feature-Based Structure:**
+- **Easy feature migration**: Copy entire folder to transfer functionality
+- **Clear dependencies**: Related files grouped together
+- **Better team collaboration**: Developers can work on isolated features
+- **Modular development**: Features can be developed and tested independently
+- **Reduced merge conflicts**: Changes isolated to specific feature folders
+
+**Folder Naming Rules:**
+- Use snake_case for all folders (player_controller, enemy_spawner)
+- Group by logical entities (player, enemies, ui, world)
+- Keep shared/common code in dedicated folders (shared/, common/, core/)
+
+## 🚀 PERFORMANCE CRITICAL
+
+### StringName Optimization (MANDATORY)
+Use StringName (&"string_name") for ALL:
+- Node names: `get_node(&"PlayerSprite")`
+- Signal names: `signal_name.connect(callable)`
+- Method calls: `call(&"method_name")`
+- Animation names: `animation_player.play(&"walk")`
+- Group names: `get_tree().get_nodes_in_group(&"enemies")`
+- Input actions: `Input.is_action_pressed(&"move_left")`
+
+### Safe Operations (MANDATORY)
+- ALWAYS use call_deferred() for node operations in physics callbacks and scene changes
+- ALWAYS use guard clauses for early returns with print_debug() tracking
+- ALWAYS use get_node_or_null() and has_node() before accessing nodes
+
+```gdscript
+# Safe node access pattern
+func damage_player():
+    var health_bar: ProgressBar = get_node_or_null(&"UI/HealthBar")
+    if not health_bar:
+        print_debug("HealthBar node not found")
+        return
+    health_bar.value = current_health
+
+# Safe deferred operations
+func _on_body_entered(body: Node2D):
+    body.call_deferred(&"queue_free")
+    call_deferred(&"add_child", new_node)
+
+# Guard clause pattern
+func take_damage(attack: Attack) -> void:
+    if not attack:
+        print_debug("Attack is null, skipping damage")
+        return
+    if current_health <= 0:
+        print_debug("Already dead, ignoring damage")
+        return
+    # Main logic here
+    current_health -= attack.damage
+```
+
+## 🏗️ COMPONENT-BASED ARCHITECTURE
+
+### Core Principles
+- Create components as separate Node2D/Area2D/Node classes with class_name
+- Each component handles ONE responsibility
+- Components communicate through parent object or signals
+- Use @export with specific component types for type safety
+
+### Standard Component Pattern
+```gdscript
+class_name HealthComponent
+extends Node2D
+
+@export var max_health: int = 100
+var current_health: int
+
+signal health_changed(new_health: int)
+signal health_depleted
+
+func _ready():
+    current_health = max_health
+
+func damage(attack: Attack):
+    if not attack:
+        print_debug("Attack is null")
+        return
+    current_health -= attack.damage
+    health_changed.emit(current_health)
+    if current_health <= 0:
+        health_depleted.emit()
+```
+
+### Entity Structure
+```
+Player (CharacterBody2D)
+├── Sprite2D
+├── HealthComponent (Node2D)
+├── HitboxComponent (Area2D)
+│   └── CollisionShape2D
+├── AttackComponent (Node2D)
+└── InputComponent (Node2D)
+```
+
+### Component Communication
+- Components should NOT directly reference other components
+- Use parent entity as communication hub
+- Use signals for loose coupling
+
+```gdscript
+# In HitboxComponent
+func _on_area_entered(area: Area2D):
+    if area.has_method(&"get_attack_data"):
+        var attack = area.get_attack_data()
+        get_parent().take_damage(attack)
+
+# In main entity
+func take_damage(attack: Attack):
+    if health_component:
+        health_component.damage(attack)
+```
+
+## 📊 DATA-DRIVEN DESIGN
+
+### Resource Pattern (MANDATORY for varying data)
+```gdscript
+class_name EnemyStats
+extends Resource
+
+@export var health: int = 50
+@export var speed: float = 100.0
+@export var attack_damage: int = 10
+@export var sprite_texture: Texture2D
+```
+
+### Strategy Pattern (for combinable behaviors)
+```gdscript
+class_name BaseUpgradeStrategy
+extends Resource
+
+func apply_upgrade(target: Node): pass
+
+class_name DamageUpgradeStrategy
+extends BaseUpgradeStrategy
+
+@export var damage_increase: int = 5
+
+func apply_upgrade(target: Node):
+    if target.has_method(&"increase_damage"):
+        target.increase_damage(damage_increase)
+```
+
+### Parameter Grouping Rules
+Use custom classes when:
+- 3+ related parameters (damage, position, force)
+- Parameters likely to grow (attack → attack + stun + effects)
+- Logical grouping exists
+
+```gdscript
+# ❌ BAD: Will grow over time
+func damage(damage: int, knockback: float, position: Vector2)
+
+# ✅ GOOD: Prepared for growth
+class_name Attack extends Resource
+var damage: int; var knockback: float; var position: Vector2
+# Easy to add: var stun_time: float; var effects: Array[Effect]
+
+func damage(attack: Attack)
+```
+
+## 💻 DEVELOPMENT STANDARDS
+
+### Naming Conventions (Official Godot Standards)
+- **Files**: snake_case (yaml_parser.gd, main_menu.gd)
+- **Scenes**: PascalCase (MainMenu.tscn, PlayerCharacter.tscn)
+- **Resources**: snake_case (player_stats.tres, enemy_data.tres)
+- **Class names**: PascalCase with class_name (class_name YAMLParser)
+- **Node names**: PascalCase (Camera3D, Player, HealthComponent)
+- **Functions**: snake_case (func load_level():)
+- **Variables**: snake_case (var particle_effect)
+- **Signals**: snake_case (signal door_opened)
+- **Constants**: CONSTANT_CASE (const MAX_SPEED = 200)
+- **Enum names**: PascalCase (enum Element)
+- **Enum members**: CONSTANT_CASE ({EARTH, WATER, AIR, FIRE})
+
+### Code Quality & Strict Typing
+- **MANDATORY**: Type hints for ALL variables, parameters, and return values
+- **NEVER use generic types**: Node → HealthComponent, Array → Array[Enemy], Resource → EnemyStats
+- **ALWAYS specify exact types**: @export var health_component: HealthComponent (NOT Node)
+- Implement _ready() and lifecycle functions with explicit super() calls
+- Use @onready annotations instead of direct node references in _ready()
+- Keep methods focused and under 30 lines when possible
+- Document complex functions with docstrings
+
+```gdscript
+# ❌ BAD: Generic types
+var components: Array
+@export var node: Node
+func process_data(data): pass
+
+# ✅ GOOD: Specific types
+var components: Array[BaseComponent]
+@export var health_component: HealthComponent
+func process_data(data: PlayerData) -> ProcessResult:
+```
+
+### Signal Best Practices
+- Use clear, contextual signal names (player_health_changed)
+- Utilize typed signals for safety (signal item_collected(item_name: String))
+- Connect signals in code for dynamic nodes, editor for static relationships
+- Use EventBus singleton for global signals
+- Always disconnect signals when nodes are freed
+
+### Error Handling
+- Use assert() for development-time error checking
+- Implement graceful fallbacks for missing resources
+- Log errors appropriately in production builds
+- Handle network errors gracefully in multiplayer games
+- No Try-Catch (doesn't exist in Godot)
+
+## 🎮 GODOT SPECIFIC
+
+### Scene & Project Organization
+- **MANDATORY**: Organize project by features/entities, NOT by file types
+- Keep scene tree depth minimal for performance
+- Use scene inheritance for reusable components
+- Implement proper scene cleanup on queue_free()
+- Use SubViewport nodes carefully due to performance impact
+- Provide step-by-step instructions for scene creation instead of source code
+- Group related assets (scripts, scenes, textures, data) in feature folders for easy migration
+
+### Resource Management
+- Implement proper resource cleanup in _exit_tree()
+- Use preload() for essential resources, load() for optional ones
+- Implement resource unloading for unused assets
+- Use object pooling for frequently spawned objects
+
+### TileMap Implementation
+- TileMap node is deprecated - use multiple TileMapLayer nodes instead
+- Convert existing TileMaps using "Extract TileMap layers" option
+- Access layers through TileMapLayer nodes
+- Update navigation code to use TileMapLayer.get_navigation_map()
+
+## 🪟 WINDOWS/MCP COMPATIBILITY
+
+For MCP (Godot Management Plugin) on Windows:
+- Use escaped backslashes (`\\`) in all project paths
+- No leading forward slash (`/`) before disk letter
+- Correct format: `D:\\Project\\Games\\THGJ21`
+- Convert straight slashes automatically, start commands immediately
+
+## 🎯 ARCHITECTURE DECISION TREE
+
+When implementing new functionality:
+- **Need to group related data OR potential growth?** → Use class_name
+- **Need data variations?** → Use Resources
+- **Need combinable behaviors?** → Use Strategy Pattern
+- **Inheritance getting complex?** → Switch to Composition
+
+### Refactoring Triggers
+- Functions with 3+ related parameters or growth potential
+- Copy-pasting similar classes
+- "God objects" doing everything
+- Hard to add features without breaking code
+
+### Validation Checklist
+- [ ] All custom types have class_name
+- [ ] Functions designed for growth use custom classes
+- [ ] Data variations use Resources
+- [ ] Combinable behaviors use Strategy Pattern
+- [ ] Type safety: HealthComponent not Node2D, Array[BaseStrategy] not Array
+- [ ] System extensible without breaking existing code
+
+### Component Development Workflow
+1. Identify if it's reusable behavior → Create component
+2. Identify if it's data that varies → Create Resource
+3. Identify if it's combinable behavior → Create Strategy
+4. Always use class_name for custom types
+5. Test component independently before integration
+
+## 🔍 CODE VALIDATION PATTERNS
+
+**Auto-validate your code:**
+```gdscript
+# MANDATORY validation pattern for all components
+func _validate_setup() -> bool:
+    if not get_parent():
+        push_error("Component must have parent")
+        return false
+    return true
+
+func _ready():
+    assert(_validate_setup(), "Component setup failed")
+```
+
+## ⚠️ COMMON MISTAKES TO AVOID
+
+1. **Using generic types** - Crashes production code
+2. **Direct node access** - Causes null reference errors
+3. **File-based organization** - Makes features hard to migrate
+4. **Missing guard clauses** - Leads to cryptic errors
+5. **Inheritance over composition** - Creates rigid architecture
+
+## 🚨 EMERGENCY FIXES
+
+**If you see these errors:**
+- "Invalid get index 'health'" → Add type: `var health_component: HealthComponent`
+- "Node not found" → Add guard: `if not has_node(&"NodeName"):`
+- "Cannot call method on null" → Use `get_node_or_null()`
+- "Array index out of bounds" → Add check: `if index < array.size():`
+- "Resource is null" → Add validation: `if not resource:`
