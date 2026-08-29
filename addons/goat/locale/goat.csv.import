@@ -15,3 +15,5 @@ dest_files=["res://addons/goat/locale/goat.en.translation", "res://addons/goat/l
 
 compress=true
 delimiter=0
+unescape_keys=false
+unescape_translations=true

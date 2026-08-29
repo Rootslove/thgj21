@@ -8,28 +8,32 @@
 
 config_version=5
 
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
 [application]
 
 config/name="THGJ21"
 run/main_scene="res://game/scenes/main/MainMenu.tscn"
-config/features=PackedStringArray("4.4", "Forward Plus")
+config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
 
 [audio]
 
-buses/default_bus_layout=""
+buses/default_bus_layout="uid://tiegd6133acc"
 
 [autoload]
 
-goat_audio_bus="*res://addons/goat/autoload/audio_bus.gd"
-goat_locale="*res://addons/goat/autoload/locale.gd"
-goat_utils="*res://addons/goat/globals/goat_utils.gd"
-goat="*res://addons/goat/globals/goat.gd"
-goat_state="*res://addons/goat/globals/goat_state.gd"
-goat_inventory="*res://addons/goat/globals/goat_inventory.gd"
-goat_interaction="*res://addons/goat/globals/goat_interaction.gd"
-goat_voice="*res://addons/goat/globals/goat_voice.gd"
-goat_settings="*res://addons/goat/globals/goat_settings.gd"
+goat_audio_bus="*uid://cpqvi2jcd8q3v"
+goat_locale="*uid://djr86b434nrl0"
+goat_utils="*uid://b3yaqtf0dq5q4"
+goat="*uid://dcr8gwfuw73mu"
+goat_state="*uid://bnahu53jkowgy"
+goat_inventory="*uid://dd4utkeprm0a3"
+goat_interaction="*uid://dhkuay5uy5thv"
+goat_voice="*uid://div0dm5bsqepx"
+goat_settings="*uid://doq2b5dbvgcc2"
 DialogueManager="*res://addons/goat/addons/dialogue_manager/dialogue_manager.gd"
 
 [debug]
@@ -118,10 +122,6 @@ goat_rotate_inventory={
 "events": [Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":0,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"button_mask":0,"position":Vector2(0, 0),"global_position":Vector2(0, 0),"factor":1.0,"button_index":2,"canceled":false,"pressed":false,"double_click":false,"script":null)
 ]
 }
-
-[internationalization]
-
-locale/translations_pot_files=PackedStringArray("res://.history/demo/goat/dialogues/goat_20250526230614.dialogue", "res://.history/demo/goat/dialogues/goat_20250604034238.dialogue")
 
 [locale]
 
